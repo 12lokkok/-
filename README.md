@@ -37,12 +37,15 @@
 
 • 应用层：可视化交互界面
 
+
+系统架构
+
 技术栈
 
-• 深度学习框架：PyTorch + Ultralytics YOLO
+• 深度学习框架：YOLO（Ultralytics）
 
-• 开发语言：Python
+• GUI框架：Tkinter
 
-• 可视化界面：OpenCV + Tkinter
+• 图像处理：OpenCV、PIL（Python Imaging Library）
 
-• 模型部署：支持PC端
+• 科学计算：NumPy
