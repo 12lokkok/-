@@ -1,0 +1,15 @@
+
+
+
+# Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
+path: D:\deeplearning\ultralytics-8.3.163\datasets\xzapple
+train: images/train
+val: images/val
+test:
+
+# Classes
+names:
+  0: mature
+  1: immature
+  2: overmature
+
