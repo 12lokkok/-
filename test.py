@@ -138,6 +138,98 @@ def detect_image():
     label_img.config(image=img_tk)
     label_img.image = img_tk
 
+def detect_video():
+    """
+    视频文件检测功能
+    支持本地视频文件输入，实现逐帧检测与可视化
+    """
+    video_path = filedialog.askopenfilename(
+        title="选择视频文件",
+        filetypes=[("Video Files", "*.mp4 *.avi *.mov")]
+    )
+
+    if not video_path:
+        return
+
+    cap = cv2.VideoCapture(video_path)
+
+    if not cap.isOpened():
+        print("无法打开视频文件")
+        return
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        start_time = time.time()
+        results = model(frame)[0]
+        fps = 1 / (time.time() - start_time)
+
+        total_count = 0
+        count_dict = {"immature": 0, "mature": 0, "overmature": 0}
+
+        for box in results.boxes:
+            conf = float(box.conf[0])
+            if conf < CONF_THRES:
+                continue
+
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+            cls_id = int(box.cls[0])
+            cls_name = model.names[cls_id]
+
+            crop = frame[y1:y2, x1:x2]
+            if crop.size == 0:
+                continue
+
+            hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+            s_mean = hsv[:, :, 1].mean()
+
+            final_class = maturity_fusion(cls_name, s_mean)
+            color = COLOR_MAP[final_class]
+
+            cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+            cv2.putText(frame, final_class,
+                        (x1, y1 - 5),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+
+            total_count += 1
+            count_dict[final_class] += 1
+
+        # ===== 统计显示 =====
+        y_offset = 30
+        for cls in ["immature", "mature", "overmature"]:
+            cv2.putText(
+                frame,
+                f"{cls}: {count_dict[cls]}",
+                (10, y_offset),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                COLOR_MAP[cls],
+                2
+            )
+            y_offset += 30
+
+        cv2.putText(
+            frame,
+            f"Total: {total_count}  FPS: {fps:.1f}",
+            (10, 230),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (0, 0, 0),
+            2
+        )
+
+        # draw_legend(frame)
+
+        cv2.imshow("Video Detection (Press Q to exit)", frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
 # ================== 摄像头实时检测 ==================
 def detect_camera():
     cap = cv2.VideoCapture(0)
@@ -222,6 +314,9 @@ root.geometry("720x650")
 
 btn_img = tk.Button(root, text="图片检测", command=detect_image)
 btn_img.pack(pady=10)
+
+btn_video = tk.Button(root, text="视频文件检测", command=detect_video)
+btn_video.pack(pady=10)
 
 btn_cam = tk.Button(root, text="摄像头实时检测", command=detect_camera)
 btn_cam.pack(pady=10)
